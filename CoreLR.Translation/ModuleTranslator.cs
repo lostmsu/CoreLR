@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics.Contracts;
 using LLVM;
 using Mono.Cecil;
 
@@ -8,6 +10,8 @@ namespace CoreLR.Translation
 	{
 		public ModuleTranslator(ModuleTranslationOptions options)
 		{
+			Contract.Requires(options != null);
+
 			resolver = new DefaultAssemblyResolver();
 			context = Context.Global;
 			module = new Module(options.ModuleName, context);
@@ -20,6 +24,8 @@ namespace CoreLR.Translation
 		readonly Context context;
 		readonly Module module;
 		readonly AssemblyDefinition assembly;
+
+		readonly HashSet<IMemberDefinition> translated = new HashSet<IMemberDefinition>();
 
 		public void Translate()
 		{
@@ -34,6 +40,8 @@ namespace CoreLR.Translation
 
 		void Translate(TypeDefinition typeDefinition)
 		{
+			Contract.Requires(typeDefinition != null);
+
 			TranslateStaticFields(typeDefinition);
 
 			foreach (var methodDefinition in typeDefinition.Methods)
@@ -44,11 +52,31 @@ namespace CoreLR.Translation
 
 		void Translate(MethodDefinition methodDefinition)
 		{
+			Contract.Requires(methodDefinition != null);
+			Contract.Requires<InvalidOperationException>(!translated.Contains(methodDefinition));
+			Contract.Ensures(translated.Contains(methodDefinition));
+
+			translated.Add(methodDefinition);
+
+			var function = DeclareFunction(methodDefinition);
+			var prologue = new Block("prologue", context, function);
+
+			throw new NotImplementedException();
+		}
+
+		Function DeclareFunction(MethodDefinition methodDefinition)
+		{
 			throw new NotImplementedException();
 		}
 
 		void TranslateStaticFields(TypeDefinition typeDefinition)
 		{
+			Contract.Requires(typeDefinition != null);
+			Contract.Requires<InvalidOperationException>(!translated.Contains(typeDefinition));
+			Contract.Ensures(translated.Contains(typeDefinition));
+
+			translated.Add(typeDefinition);
+
 			throw new NotImplementedException();
 		}
 	}
